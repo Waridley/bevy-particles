@@ -1,6 +1,6 @@
 use bevy::ecs::{query::WorldQuery, system::EntityCommands};
 use bevy::prelude::*;
-use bevy::utils::{Instant, Duration};
+use bevy::utils::{Duration, Instant};
 use rand::Rng;
 use std::sync::Arc;
 
@@ -11,8 +11,7 @@ pub struct ParticlesPlugin;
 
 impl Plugin for ParticlesPlugin {
 	fn build(&self, app: &mut App) {
-		app
-			.add_system(Linear::tick)
+		app.add_system(Linear::tick)
 			.add_system(Angular::tick)
 			.add_system(MulScale::tick)
 			.add_system(AddScale::tick)
@@ -75,7 +74,7 @@ impl Default for Lifetime {
 pub fn handle_lifetimes(
 	mut cmds: Commands,
 	mut q: Query<(Entity, &TimeCreated, &Lifetime)>,
-	t: Res<Time>
+	t: Res<Time>,
 ) {
 	for (id, created, lifetime) in &mut q {
 		if let Some(update) = t.last_update() {
@@ -87,9 +86,20 @@ pub fn handle_lifetimes(
 }
 
 pub trait ParticleFactory
-where for<'w, 's, 'a> Self: Fn(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a> + Send + Sync + 'static {}
-impl<F> ParticleFactory for F
-where for <'w, 's, 'a> F: Fn(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a> + Send + Sync + 'static {}
+where
+	for<'w, 's, 'a> Self: Fn(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
+		+ Send
+		+ Sync
+		+ 'static,
+{
+}
+impl<F> ParticleFactory for F where
+	for<'w, 's, 'a> F: Fn(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
+		+ Send
+		+ Sync
+		+ 'static
+{
+}
 
 #[derive(Clone, Component)]
 pub struct Spewer {
@@ -111,7 +121,9 @@ impl Default for Spewer {
 	fn default() -> Self {
 		let interval = Duration::from_secs_f32(1.0 / 60.0);
 		Self {
-			factory: Arc::new(|cmds: &mut Commands, _, _| cmds.spawn(ParticleBundle::<StandardMaterial>::default())),
+			factory: Arc::new(|cmds: &mut Commands, _, _| {
+				cmds.spawn(ParticleBundle::<StandardMaterial>::default())
+			}),
 			interval,
 			jitter: Duration::ZERO,
 			last_spawn: Instant::now(),
@@ -123,7 +135,7 @@ impl Default for Spewer {
 fn spawn_particles(
 	mut cmds: Commands,
 	mut q: Query<(Entity, &mut Spewer, &GlobalTransform)>,
-	t: Res<Time>
+	t: Res<Time>,
 ) {
 	for (id, mut spewer, xform) in &mut q {
 		let Spewer {
@@ -133,22 +145,23 @@ fn spawn_particles(
 			ref factory,
 			ref mut last_spawn,
 		} = *spewer;
-		
+
 		let Some(remaining) = t.last_update() else { continue };
 		let Some(mut remaining) = remaining.checked_duration_since(*last_spawn) else { continue };
-		
+
 		while remaining >= interval {
-			remaining = remaining.saturating_sub(interval + rand::thread_rng().gen_range(Duration::ZERO..=jitter));
-			*last_spawn =  *last_spawn + interval;
-			
-			let mut particle: EntityCommands = (factory)(&mut cmds, xform, TimeCreated(*last_spawn));
+			remaining = remaining
+				.saturating_sub(interval + rand::thread_rng().gen_range(Duration::ZERO..=jitter));
+			*last_spawn = *last_spawn + interval;
+
+			let mut particle: EntityCommands =
+				(factory)(&mut cmds, xform, TimeCreated(*last_spawn));
 			let particle_id = particle.id();
 			if !global_coords {
 				cmds.entity(id).add_child(particle_id);
 			} else {
 				particle.insert(xform.compute_transform());
 			}
-			
 		}
 		// if spawn_timer.tick(t.delta()).finished() {
 		// 	let jitter = rand::thread_rng().gen_range(Duration::ZERO..=jitter);
