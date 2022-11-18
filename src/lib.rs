@@ -16,7 +16,7 @@ impl Plugin for ParticlesPlugin {
 			.add_system(AddScale::tick)
 			.add_system(TargetScale::tick)
 			.add_system(MulTransform::tick)
-			.add_system(DynParticleMovement::tick)
+			.add_system(DynParticleUpdate::tick)
 			.add_system_to_stage(CoreStage::PreUpdate, spawn_particles)
 			.add_system(handle_lifetimes);
 	}

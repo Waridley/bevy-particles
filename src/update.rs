@@ -103,13 +103,16 @@ impl MulTransform {
 	}
 }
 
-#[derive(Component)]
-pub struct DynParticleMovement(Box<dyn FnMut(ParticleDataItem, &Time) + Send + Sync + 'static>);
+pub trait ParticleUpdateFn: FnMut(ParticleDataItem, &Time) + Send + Sync + 'static {}
+impl<F> ParticleUpdateFn for F where F: FnMut(ParticleDataItem, &Time) + Send + Sync + 'static {}
 
-impl DynParticleMovement {
+#[derive(Component)]
+pub struct DynParticleUpdate(Box<dyn ParticleUpdateFn>);
+
+impl DynParticleUpdate {
 	pub fn tick(mut q: Query<(&mut Self, ParticleData)>, t: Res<Time>) {
 		for (item, data) in &mut q {
-			(item.map_unchanged(|it| &mut it.0))(data, &*t)
+			(item.map_unchanged(|it| &mut it.0))(data, &t)
 		}
 	}
 }
