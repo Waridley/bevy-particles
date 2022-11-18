@@ -1,8 +1,7 @@
 use bevy::ecs::{query::WorldQuery, system::EntityCommands};
 use bevy::prelude::*;
 use bevy::utils::{Duration, Instant};
-use rand::Rng;
-use std::sync::Arc;
+use nanorand::{Rng, WyRand};
 
 pub mod update;
 use update::*;
@@ -87,27 +86,28 @@ pub fn handle_lifetimes(
 
 pub trait ParticleFactory
 where
-	for<'w, 's, 'a> Self: Fn(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
+	for<'w, 's, 'a> Self: FnMut(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
 		+ Send
 		+ Sync
 		+ 'static,
 {
 }
 impl<F> ParticleFactory for F where
-	for<'w, 's, 'a> F: Fn(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
+	for<'w, 's, 'a> F: FnMut(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
 		+ Send
 		+ Sync
 		+ 'static
 {
 }
 
-#[derive(Clone, Component)]
+#[derive(Component)]
 pub struct Spewer {
-	pub factory: Arc<dyn ParticleFactory>,
+	pub factory: Box<dyn ParticleFactory>,
 	pub interval: Duration,
 	pub jitter: Duration,
 	pub last_spawn: Instant,
 	pub global_coords: bool,
+	pub rng: nanorand::WyRand,
 }
 
 #[derive(Default, Bundle)]
@@ -117,17 +117,51 @@ pub struct SpewerBundle {
 	pub visibility: VisibilityBundle,
 }
 
+fn default_factory<'w, 's, 'a>(
+	cmds: &'a mut Commands<'w, 's>,
+	_: &GlobalTransform,
+	_: TimeCreated,
+) -> EntityCommands<'w, 's, 'a> {
+	cmds.spawn(ParticleBundle::<StandardMaterial>::default())
+}
+
 impl Default for Spewer {
 	fn default() -> Self {
 		let interval = Duration::from_secs_f32(1.0 / 60.0);
 		Self {
-			factory: Arc::new(|cmds: &mut Commands, _, _| {
-				cmds.spawn(ParticleBundle::<StandardMaterial>::default())
-			}),
+			factory: Box::new(default_factory),
 			interval,
 			jitter: Duration::ZERO,
 			last_spawn: Instant::now(),
 			global_coords: false,
+			rng: WyRand::new(),
+		}
+	}
+}
+
+impl Spewer {
+	pub fn new(factory: impl ParticleFactory) -> Self {
+		Self {
+			factory: Box::new(factory),
+			..default()
+		}
+	}
+
+	pub fn seeded(seed: u64) -> Self {
+		Self {
+			rng: WyRand::new_seed(seed),
+			..default()
+		}
+	}
+
+	pub fn instance(&self, factory: impl ParticleFactory) -> Self {
+		Self {
+			factory: Box::new(factory),
+			interval: self.interval,
+			jitter: self.jitter,
+			last_spawn: self.last_spawn,
+			global_coords: self.global_coords,
+			rng: self.rng.clone(),
 		}
 	}
 }
@@ -142,17 +176,23 @@ fn spawn_particles(
 			interval,
 			jitter,
 			global_coords,
-			ref factory,
+			ref mut factory,
 			ref mut last_spawn,
+			ref mut rng,
 		} = *spewer;
 
 		let Some(remaining) = t.last_update() else { continue };
 		let Some(mut remaining) = remaining.checked_duration_since(*last_spawn) else { continue };
 
 		while remaining >= interval {
-			remaining = remaining
-				.saturating_sub(interval + rand::thread_rng().gen_range(Duration::ZERO..=jitter));
-			*last_spawn = *last_spawn + interval;
+			remaining = remaining.saturating_sub(
+				interval
+					+ Duration::new(
+						rng.generate_range(0..=jitter.as_secs()),
+						rng.generate_range(0..=jitter.subsec_nanos()),
+					),
+			);
+			*last_spawn += interval;
 
 			let mut particle: EntityCommands =
 				(factory)(&mut cmds, xform, TimeCreated(*last_spawn));
@@ -163,10 +203,5 @@ fn spawn_particles(
 				particle.insert(xform.compute_transform());
 			}
 		}
-		// if spawn_timer.tick(t.delta()).finished() {
-		// 	let jitter = rand::thread_rng().gen_range(Duration::ZERO..=jitter);
-		// 	spawn_timer.set_duration(interval + jitter);
-		// 	spawn_timer.reset();
-		// }
 	}
 }
