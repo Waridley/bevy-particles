@@ -10,15 +10,18 @@ pub struct ParticlesPlugin;
 
 impl Plugin for ParticlesPlugin {
 	fn build(&self, app: &mut App) {
-		app.add_system(Linear::tick)
-			.add_system(Angular::tick)
-			.add_system(MulScale::tick)
-			.add_system(AddScale::tick)
-			.add_system(TargetScale::tick)
-			.add_system(MulTransform::tick)
-			.add_system(DynParticleUpdate::tick)
+		app
 			.add_systems(PreUpdate, spawn_particles)
-			.add_system(handle_lifetimes);
+			.add_systems(Update, (
+			Linear::tick,
+			Angular::tick,
+			MulScale::tick,
+			AddScale::tick,
+			TargetScale::tick,
+			MulTransform::tick,
+			DynParticleUpdate::tick,
+			handle_lifetimes,
+		));
 	}
 }
 
