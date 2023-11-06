@@ -18,7 +18,7 @@ impl Plugin for ParticlesPlugin {
 			MulScale::tick,
 			AddScale::tick,
 			TargetScale::tick,
-			MulTransform::tick,
+			InterpTransform::tick,
 			DynParticleUpdate::tick,
 			handle_lifetimes,
 		));
@@ -64,7 +64,7 @@ pub struct InitialTransform(pub Transform);
 #[derive(Default, Debug, Clone, Copy, Component, Deref, DerefMut)]
 pub struct InitialGlobalTransform(pub GlobalTransform);
 
-#[derive(Debug, Clone, Component)]
+#[derive(Debug, Clone, Component, Deref, DerefMut)]
 pub struct Lifetime(pub Duration);
 
 impl Default for Lifetime {

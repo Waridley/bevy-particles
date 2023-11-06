@@ -86,18 +86,18 @@ impl TargetScale {
 }
 
 #[derive(Component)]
-pub struct MulTransform {
-	pub velocity: Transform,
+pub struct InterpTransform {
+	pub final_xform: Transform,
 }
-impl MulTransform {
-	pub fn tick(mut q: Query<(&Self, &mut Transform)>, t: Res<Time>) {
-		let dt = t.delta_seconds();
-		for (item, mut xform) in &mut q {
-			*xform = *xform
-				* Transform {
-					translation: xform.translation + item.velocity.translation * dt,
-					rotation: xform.rotation.slerp(item.velocity.rotation, dt),
-					scale: xform.scale.lerp(item.velocity.scale, dt),
+impl InterpTransform {
+	pub fn tick(mut q: Query<(&Self, &mut Transform, &InitialTransform, &TimeCreated, &Lifetime)>, t: Res<Time>) {
+		for (item, mut xform, init_xform, init_t, lifetime) in &mut q {
+			let elapsed = t.last_update().unwrap().duration_since(**init_t);
+			let s = elapsed.as_secs_f32() / lifetime.as_secs_f32();
+			*xform = Transform {
+					translation: init_xform.translation.lerp(item.final_xform.translation, s),
+					rotation: init_xform.rotation.slerp(item.final_xform.rotation, s),
+					scale: init_xform.scale.lerp(item.final_xform.scale, s),
 				}
 		}
 	}
