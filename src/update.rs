@@ -86,10 +86,10 @@ impl TargetScale {
 }
 
 #[derive(Component)]
-pub struct InterpTransform {
+pub struct TargetTransform {
 	pub final_xform: Transform,
 }
-impl InterpTransform {
+impl TargetTransform {
 	pub fn tick(mut q: Query<(&Self, &mut Transform, &InitialTransform, &TimeCreated, &Lifetime)>, t: Res<Time>) {
 		for (item, mut xform, init_xform, init_t, lifetime) in &mut q {
 			let elapsed = t.last_update().unwrap().duration_since(**init_t);
