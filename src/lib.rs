@@ -1,5 +1,5 @@
-use std::ops::Mul;
-use bevy::ecs::{schedule::ScheduleLabel, query::WorldQuery, system::EntityCommands};
+#![allow(clippy::type_complexity)]
+use bevy::ecs::{query::WorldQuery, system::EntityCommands};
 use bevy::prelude::*;
 use bevy::utils::{Duration, Instant};
 use nanorand::{Rng, WyRand};
@@ -11,9 +11,9 @@ pub struct ParticlesPlugin;
 
 impl Plugin for ParticlesPlugin {
 	fn build(&self, app: &mut App) {
-		app
-			.add_systems(PreUpdate, spawn_particles)
-			.add_systems(Update, (
+		app.add_systems(PreUpdate, spawn_particles).add_systems(
+			Update,
+			(
 				Linear::tick,
 				Angular::tick,
 				MulScale::tick,
@@ -22,7 +22,8 @@ impl Plugin for ParticlesPlugin {
 				TargetTransform::tick,
 				DynParticleUpdate::tick,
 				handle_lifetimes,
-			));
+			),
+		);
 	}
 }
 
@@ -128,7 +129,6 @@ pub struct PreviousTransform(Transform);
 #[derive(Default, Component, Deref, DerefMut)]
 pub struct PreviousGlobalTransform(GlobalTransform);
 
-
 fn default_factory<'w, 's, 'a>(
 	cmds: &'a mut Commands<'w, 's>,
 	_: &GlobalTransform,
@@ -180,11 +180,18 @@ impl Spewer {
 
 fn spawn_particles(
 	mut cmds: Commands,
-	mut q: Query<(Entity, &mut Spewer, &Transform, &GlobalTransform, Option<&mut PreviousTransform>, Option<&mut PreviousGlobalTransform>)>,
+	mut q: Query<(
+		Entity,
+		&mut Spewer,
+		&Transform,
+		&GlobalTransform,
+		Option<&mut PreviousTransform>,
+		Option<&mut PreviousGlobalTransform>,
+	)>,
 	t: Res<Time>,
 ) {
 	let dt = t.delta_seconds();
-	for (id, mut spewer, xform, global_xform, mut prev_xform, mut prev_global_xform) in &mut q {
+	for (id, mut spewer, xform, global_xform, prev_xform, prev_global_xform) in &mut q {
 		let Spewer {
 			interval,
 			jitter,
@@ -204,7 +211,7 @@ fn spawn_particles(
 		} else {
 			Transform::IDENTITY
 		};
-		let interval_secs =  interval.as_secs_f32();
+		let interval_secs = interval.as_secs_f32();
 		let step = Transform {
 			translation: vel.translation * interval_secs,
 			rotation: vel.rotation * interval_secs,
@@ -216,8 +223,12 @@ fn spawn_particles(
 			*global_xform
 		};
 
-		let Some(remaining) = t.last_update() else { continue };
-		let Some(mut remaining) = remaining.checked_duration_since(*last_spawn) else { continue };
+		let Some(remaining) = t.last_update() else {
+			continue;
+		};
+		let Some(mut remaining) = remaining.checked_duration_since(*last_spawn) else {
+			continue;
+		};
 
 		while remaining >= interval {
 			remaining = remaining.saturating_sub(
@@ -229,7 +240,7 @@ fn spawn_particles(
 			);
 			*last_spawn += interval;
 
-			let mut particle: EntityCommands =
+			let particle: EntityCommands =
 				(factory)(&mut cmds, &curr_xform, TimeCreated(*last_spawn));
 			let particle_id = particle.id();
 			if !use_global_coords {
@@ -240,7 +251,8 @@ fn spawn_particles(
 				translation: tmp.translation + step.translation,
 				rotation: tmp.rotation + step.rotation,
 				scale: tmp.scale + step.scale,
-			}.into();
+			}
+			.into();
 		}
 		if let Some(mut prev_xform) = prev_xform {
 			if **prev_xform != *xform {

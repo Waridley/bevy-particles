@@ -90,15 +90,24 @@ pub struct TargetTransform {
 	pub final_xform: Transform,
 }
 impl TargetTransform {
-	pub fn tick(mut q: Query<(&Self, &mut Transform, &InitialTransform, &TimeCreated, &Lifetime)>, t: Res<Time>) {
+	pub fn tick(
+		mut q: Query<(
+			&Self,
+			&mut Transform,
+			&InitialTransform,
+			&TimeCreated,
+			&Lifetime,
+		)>,
+		t: Res<Time>,
+	) {
 		for (item, mut xform, init_xform, init_t, lifetime) in &mut q {
 			let elapsed = t.last_update().unwrap().duration_since(**init_t);
 			let s = elapsed.as_secs_f32() / lifetime.as_secs_f32();
 			*xform = Transform {
-					translation: init_xform.translation.lerp(item.final_xform.translation, s),
-					rotation: init_xform.rotation.slerp(item.final_xform.rotation, s),
-					scale: init_xform.scale.lerp(item.final_xform.scale, s),
-				}
+				translation: init_xform.translation.lerp(item.final_xform.translation, s),
+				rotation: init_xform.rotation.slerp(item.final_xform.rotation, s),
+				scale: init_xform.scale.lerp(item.final_xform.scale, s),
+			}
 		}
 	}
 }
