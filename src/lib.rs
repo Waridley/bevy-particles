@@ -46,7 +46,7 @@ pub struct ParticleData<'w> {
 	pub initial_transform: &'w mut InitialTransform,
 	pub initial_global_transform: &'w mut InitialGlobalTransform,
 	pub visibility: &'w mut Visibility,
-	pub computed_visibility: &'w mut ComputedVisibility,
+	pub computed_visibility: &'w mut InheritedVisibility,
 	pub time_created: &'w mut TimeCreated,
 	pub lifetime: &'w mut Lifetime,
 }
@@ -78,7 +78,7 @@ impl Default for Lifetime {
 pub fn handle_lifetimes(
 	mut cmds: Commands,
 	mut q: Query<(Entity, &TimeCreated, &Lifetime)>,
-	t: Res<Time>,
+	t: Res<Time<Real>>,
 ) {
 	for (id, created, lifetime) in &mut q {
 		if let Some(update) = t.last_update() {
@@ -188,7 +188,7 @@ fn spawn_particles(
 		Option<&mut PreviousTransform>,
 		Option<&mut PreviousGlobalTransform>,
 	)>,
-	t: Res<Time>,
+	t: Res<Time<Real>>,
 ) {
 	let dt = t.delta_seconds();
 	for (id, mut spewer, xform, global_xform, prev_xform, prev_global_xform) in &mut q {

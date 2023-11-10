@@ -9,7 +9,7 @@ pub struct Linear {
 impl Linear {
 	pub fn tick(
 		mut q: Query<(&Self, &mut Transform, &InitialTransform, &TimeCreated)>,
-		t: Res<Time>,
+		t: Res<Time<Real>>,
 	) {
 		for (item, mut xform, init_xform, t_created) in &mut q {
 			xform.translation = init_xform.translation
@@ -71,7 +71,7 @@ impl TargetScale {
 			&TimeCreated,
 			&Lifetime,
 		)>,
-		t: Res<Time>,
+		t: Res<Time<Real>>,
 	) {
 		for (target, mut xform, init_xform, t_created, lifetime) in &mut q {
 			xform.scale = init_xform.scale.lerp(
@@ -98,7 +98,7 @@ impl TargetTransform {
 			&TimeCreated,
 			&Lifetime,
 		)>,
-		t: Res<Time>,
+		t: Res<Time<Real>>,
 	) {
 		for (item, mut xform, init_xform, init_t, lifetime) in &mut q {
 			let elapsed = t.last_update().unwrap().duration_since(**init_t);

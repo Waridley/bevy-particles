@@ -7,5 +7,5 @@ license = "MIT OR Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.11", default-features = false, features = ["bevy_asset", "bevy_render", "bevy_pbr"] }
+bevy = { version = "0.12", default-features = false, features = ["bevy_asset", "bevy_render", "bevy_pbr"] }
 nanorand = { version = "0.7.0", default-features = false, features = ["wyrand"] }
