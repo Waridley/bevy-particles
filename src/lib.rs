@@ -1,7 +1,9 @@
 #![allow(clippy::type_complexity)]
-use bevy::ecs::{query::WorldQuery, system::EntityCommands};
-use bevy::prelude::*;
-use bevy::utils::{Duration, Instant};
+use bevy::{
+	ecs::{query::WorldQuery, system::EntityCommands},
+	prelude::*,
+	utils::{Duration, Instant},
+};
 use nanorand::{Rng, WyRand};
 
 pub mod update;
