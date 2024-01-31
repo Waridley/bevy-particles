@@ -180,7 +180,7 @@ impl Spewer {
 	}
 }
 
-fn spawn_particles(
+pub fn spawn_particles(
 	mut cmds: Commands,
 	mut q: Query<(
 		Entity,
