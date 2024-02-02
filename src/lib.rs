@@ -25,7 +25,9 @@ impl Plugin for ParticlesPlugin {
 				DynParticleUpdate::tick,
 				handle_lifetimes,
 			),
-		);
+		)
+			.register_type::<PreviousTransform>()
+			.register_type::<PreviousGlobalTransform>();
 	}
 }
 
@@ -38,7 +40,7 @@ pub struct ParticleBundle<M: Material = StandardMaterial> {
 	pub initial_global_transform: InitialGlobalTransform,
 }
 
-#[derive(WorldQuery)]
+#[derive(WorldQuery, Reflect)]
 #[world_query(mutable)]
 pub struct ParticleData<'w> {
 	pub mesh: &'w mut Handle<Mesh>,
@@ -53,7 +55,7 @@ pub struct ParticleData<'w> {
 	pub lifetime: &'w mut Lifetime,
 }
 
-#[derive(Debug, Clone, Copy, Component, Deref, DerefMut)]
+#[derive(Debug, Clone, Copy, Component, Deref, DerefMut, Reflect)]
 pub struct TimeCreated(pub Instant);
 
 impl Default for TimeCreated {
@@ -62,13 +64,13 @@ impl Default for TimeCreated {
 	}
 }
 
-#[derive(Default, Debug, Clone, Copy, Component, Deref, DerefMut)]
+#[derive(Default, Debug, Clone, Copy, Component, Deref, DerefMut, Reflect)]
 pub struct InitialTransform(pub Transform);
 
-#[derive(Default, Debug, Clone, Copy, Component, Deref, DerefMut)]
+#[derive(Default, Debug, Clone, Copy, Component, Deref, DerefMut, Reflect)]
 pub struct InitialGlobalTransform(pub GlobalTransform);
 
-#[derive(Debug, Clone, Component, Deref, DerefMut)]
+#[derive(Debug, Clone, Component, Deref, DerefMut, Reflect)]
 pub struct Lifetime(pub Duration);
 
 impl Default for Lifetime {
@@ -107,13 +109,16 @@ impl<F> ParticleFactory for F where
 {
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(from_reflect = false)]
 pub struct Spewer {
+	#[reflect(ignore)]
 	pub factory: Box<dyn ParticleFactory>,
 	pub interval: Duration,
 	pub jitter: Duration,
 	pub last_spawn: Instant,
 	pub use_global_coords: bool,
+	#[reflect(ignore)]
 	pub rng: nanorand::WyRand,
 }
 
@@ -126,10 +131,10 @@ pub struct SpewerBundle {
 	pub visibility: VisibilityBundle,
 }
 
-#[derive(Default, Component, Deref, DerefMut)]
-pub struct PreviousTransform(Transform);
-#[derive(Default, Component, Deref, DerefMut)]
-pub struct PreviousGlobalTransform(GlobalTransform);
+#[derive(Default, Component, Deref, DerefMut, Reflect)]
+pub struct PreviousTransform(pub Transform);
+#[derive(Default, Component, Deref, DerefMut, Reflect)]
+pub struct PreviousGlobalTransform(pub GlobalTransform);
 
 fn default_factory<'w, 's, 'a>(
 	cmds: &'a mut Commands<'w, 's>,
@@ -211,7 +216,10 @@ pub fn spawn_particles(
 				scale: (xform.scale - prev_xform.scale) / dt,
 			}
 		} else {
-			Transform::IDENTITY
+			Transform {
+				scale: Vec3::ZERO,
+				..Transform::IDENTITY
+			}
 		};
 		let interval_secs = interval.as_secs_f32();
 		let step = Transform {

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::*;
 
-#[derive(Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct Linear {
 	pub velocity: Vec3,
 }
@@ -22,7 +22,7 @@ impl Linear {
 	}
 }
 
-#[derive(Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct Angular {
 	pub velocity: Quat,
 }
@@ -34,7 +34,7 @@ impl Angular {
 	}
 }
 
-#[derive(Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct MulScale {
 	pub scale: Vec3,
 }
@@ -46,7 +46,7 @@ impl MulScale {
 	}
 }
 
-#[derive(Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct AddScale {
 	pub scale: Vec3,
 }
@@ -58,7 +58,7 @@ impl AddScale {
 	}
 }
 
-#[derive(Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct TargetScale {
 	pub scale: Vec3,
 }
@@ -85,7 +85,7 @@ impl TargetScale {
 	}
 }
 
-#[derive(Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct TargetTransform {
 	pub final_xform: Transform,
 }
