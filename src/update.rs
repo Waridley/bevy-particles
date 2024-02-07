@@ -11,14 +11,15 @@ impl Linear {
 		mut q: Query<(&Self, &mut Transform, &InitialTransform, &TimeCreated)>,
 		t: Res<Time<Real>>,
 	) {
-		for (item, mut xform, init_xform, t_created) in &mut q {
-			xform.translation = init_xform.translation
-				+ (item.velocity
-					* t.last_update()
-						.unwrap()
-						.duration_since(t_created.0)
-						.as_secs_f32());
-		}
+		q.par_iter_mut()
+			.for_each(|(item, mut xform, init_xform, t_created)| {
+				xform.translation = init_xform.translation
+					+ (item.velocity
+						* t.last_update()
+							.unwrap()
+							.duration_since(t_created.0)
+							.as_secs_f32());
+			});
 	}
 }
 
@@ -28,9 +29,9 @@ pub struct Angular {
 }
 impl Angular {
 	pub fn tick(mut q: Query<(&Self, &mut Transform)>, t: Res<Time>) {
-		for (item, mut xform) in &mut q {
+		q.par_iter_mut().for_each(|(item, mut xform)| {
 			xform.rotation = xform.rotation.slerp(item.velocity, t.delta_seconds())
-		}
+		});
 	}
 }
 
@@ -40,9 +41,9 @@ pub struct MulScale {
 }
 impl MulScale {
 	pub fn tick(mut q: Query<(&Self, &mut Transform)>, t: Res<Time>) {
-		for (item, mut xform) in &mut q {
+		q.par_iter_mut().for_each(|(item, mut xform)| {
 			xform.scale *= Vec3::ONE.lerp(item.scale, t.delta_seconds())
-		}
+		});
 	}
 }
 
@@ -52,9 +53,8 @@ pub struct AddScale {
 }
 impl AddScale {
 	pub fn tick(mut q: Query<(&Self, &mut Transform)>, t: Res<Time>) {
-		for (item, mut xform) in &mut q {
-			xform.scale += item.scale * t.delta_seconds()
-		}
+		q.par_iter_mut()
+			.for_each(|(item, mut xform)| xform.scale += item.scale * t.delta_seconds());
 	}
 }
 
@@ -73,15 +73,16 @@ impl TargetScale {
 		)>,
 		t: Res<Time<Real>>,
 	) {
-		for (target, mut xform, init_xform, t_created, lifetime) in &mut q {
-			xform.scale = init_xform.scale.lerp(
-				target.scale,
-				t.last_update()
-					.unwrap()
-					.duration_since(t_created.0)
-					.as_secs_f32() / lifetime.0.as_secs_f32(),
-			)
-		}
+		q.par_iter_mut()
+			.for_each(|(target, mut xform, init_xform, t_created, lifetime)| {
+				xform.scale = init_xform.scale.lerp(
+					target.scale,
+					t.last_update()
+						.unwrap()
+						.duration_since(t_created.0)
+						.as_secs_f32() / lifetime.0.as_secs_f32(),
+				)
+			});
 	}
 }
 
@@ -100,15 +101,16 @@ impl TargetTransform {
 		)>,
 		t: Res<Time<Real>>,
 	) {
-		for (item, mut xform, init_xform, init_t, lifetime) in &mut q {
-			let elapsed = t.last_update().unwrap().duration_since(**init_t);
-			let s = elapsed.as_secs_f32() / lifetime.as_secs_f32();
-			*xform = Transform {
-				translation: init_xform.translation.lerp(item.final_xform.translation, s),
-				rotation: init_xform.rotation.slerp(item.final_xform.rotation, s),
-				scale: init_xform.scale.lerp(item.final_xform.scale, s),
-			}
-		}
+		q.par_iter_mut()
+			.for_each(|(item, mut xform, init_xform, init_t, lifetime)| {
+				let elapsed = t.last_update().unwrap().duration_since(**init_t);
+				let s = elapsed.as_secs_f32() / lifetime.as_secs_f32();
+				*xform = Transform {
+					translation: init_xform.translation.lerp(item.final_xform.translation, s),
+					rotation: init_xform.rotation.slerp(item.final_xform.rotation, s),
+					scale: init_xform.scale.lerp(item.final_xform.scale, s),
+				}
+			});
 	}
 }
 
@@ -120,8 +122,7 @@ pub struct DynParticleUpdate(Box<dyn ParticleUpdateFn>);
 
 impl DynParticleUpdate {
 	pub fn tick(mut q: Query<(&mut Self, ParticleData)>, t: Res<Time>) {
-		for (item, data) in &mut q {
-			(item.map_unchanged(|it| &mut it.0))(data, &t)
-		}
+		q.par_iter_mut()
+			.for_each(|(item, data)| (item.map_unchanged(|it| &mut it.0))(data, &t));
 	}
 }
