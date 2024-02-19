@@ -1,6 +1,6 @@
 #![allow(clippy::type_complexity)]
 use bevy::{
-	ecs::{query::WorldQuery, system::EntityCommands},
+	ecs::{query::QueryData, system::EntityCommands},
 	prelude::*,
 	utils::{Duration, Instant},
 };
@@ -41,8 +41,8 @@ pub struct ParticleBundle<M: Material = StandardMaterial> {
 	pub initial_global_transform: InitialGlobalTransform,
 }
 
-#[derive(WorldQuery, Reflect)]
-#[world_query(mutable)]
+#[derive(QueryData, Reflect)]
+#[query_data(mutable)]
 pub struct ParticleData<'w> {
 	pub mesh: &'w mut Handle<Mesh>,
 	// pub material: &'w mut Handle<M>, // Material is generic. Should we just assume StandardMaterial?
@@ -96,14 +96,14 @@ pub fn handle_lifetimes(
 
 pub trait ParticleFactory
 where
-	for<'w, 's, 'a> Self: FnMut(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
+	for<'w, 's, 'a> Self: FnMut(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'a>
 		+ Send
 		+ Sync
 		+ 'static,
 {
 }
 impl<F> ParticleFactory for F where
-	for<'w, 's, 'a> F: FnMut(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'w, 's, 'a>
+	for<'w, 's, 'a> F: FnMut(&'a mut Commands<'w, 's>, &GlobalTransform, TimeCreated) -> EntityCommands<'a>
 		+ Send
 		+ Sync
 		+ 'static
@@ -141,7 +141,7 @@ fn default_factory<'w, 's, 'a>(
 	cmds: &'a mut Commands<'w, 's>,
 	_: &GlobalTransform,
 	_: TimeCreated,
-) -> EntityCommands<'w, 's, 'a> {
+) -> EntityCommands<'a> {
 	cmds.spawn(ParticleBundle::<StandardMaterial>::default())
 }
 
