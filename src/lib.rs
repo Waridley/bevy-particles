@@ -44,7 +44,7 @@ pub struct ParticleBundle<M: Material = StandardMaterial> {
 #[derive(QueryData, Reflect)]
 #[query_data(mutable)]
 pub struct ParticleData<'w> {
-	pub mesh: &'w mut Handle<Mesh>,
+	pub mesh: &'w mut Mesh3d,
 	// pub material: &'w mut Handle<M>, // Material is generic. Should we just assume StandardMaterial?
 	pub transform: &'w mut Transform,
 	pub global_transform: &'w mut GlobalTransform,
@@ -198,7 +198,7 @@ pub fn spawn_particles(
 	)>,
 	t: Res<Time<Real>>,
 ) {
-	let dt = t.delta_seconds();
+	let dt = t.delta_secs();
 	for (id, mut spewer, xform, global_xform, prev_xform, prev_global_xform) in &mut q {
 		let Spewer {
 			interval,

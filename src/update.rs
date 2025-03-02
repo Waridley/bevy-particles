@@ -30,7 +30,7 @@ pub struct Angular {
 impl Angular {
 	pub fn tick(mut q: Query<(&Self, &mut Transform)>, t: Res<Time>) {
 		q.par_iter_mut().for_each(|(item, mut xform)| {
-			xform.rotation = xform.rotation.slerp(item.velocity, t.delta_seconds())
+			xform.rotation = xform.rotation.slerp(item.velocity, t.delta_secs())
 		});
 	}
 }
@@ -42,7 +42,7 @@ pub struct MulScale {
 impl MulScale {
 	pub fn tick(mut q: Query<(&Self, &mut Transform)>, t: Res<Time>) {
 		q.par_iter_mut().for_each(|(item, mut xform)| {
-			xform.scale *= Vec3::ONE.lerp(item.scale, t.delta_seconds())
+			xform.scale *= Vec3::ONE.lerp(item.scale, t.delta_secs())
 		});
 	}
 }
@@ -54,7 +54,7 @@ pub struct AddScale {
 impl AddScale {
 	pub fn tick(mut q: Query<(&Self, &mut Transform)>, t: Res<Time>) {
 		q.par_iter_mut()
-			.for_each(|(item, mut xform)| xform.scale += item.scale * t.delta_seconds());
+			.for_each(|(item, mut xform)| xform.scale += item.scale * t.delta_secs());
 	}
 }
 
