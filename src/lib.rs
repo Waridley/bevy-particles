@@ -34,7 +34,9 @@ impl Plugin for ParticlesPlugin {
 
 #[derive(Default, Clone, Bundle)]
 pub struct ParticleBundle<M: Material = StandardMaterial> {
-	pub mesh_bundle: MaterialMeshBundle<M>,
+	pub mesh: Mesh3d,
+	pub material: MeshMaterial3d<M>,
+	pub transform: Transform,
 	pub lifetime: Lifetime,
 	pub time_created: TimeCreated,
 	pub initial_transform: InitialTransform,
@@ -126,10 +128,10 @@ pub struct Spewer {
 #[derive(Default, Bundle)]
 pub struct SpewerBundle {
 	pub spewer: Spewer,
-	pub transform: TransformBundle,
+	pub transform: Transform,
 	pub prev_xform: PreviousTransform,
 	pub prev_global_xform: PreviousGlobalTransform,
-	pub visibility: VisibilityBundle,
+	pub visibility: Visibility,
 }
 
 #[derive(Default, Component, Deref, DerefMut, Reflect)]
