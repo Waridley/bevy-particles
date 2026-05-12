@@ -1,9 +1,10 @@
 #![allow(clippy::type_complexity)]
 use bevy::{
 	ecs::{query::QueryData, system::EntityCommands},
+	platform::time::Instant,
 	prelude::*,
-	utils::{Duration, Instant},
 };
+use core::time::Duration;
 use nanorand::{Rng, WyRand};
 
 pub mod update;
